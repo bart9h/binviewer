@@ -31,9 +31,19 @@ void display (void* start, off_t count)
 void binviewer (void* buf, off_t size)
 {
 	initscr();
-	display(buf, size);
-	refresh();
-	getch();
+	keypad(stdscr, TRUE);
+
+	int running = 1;
+	while(running) {
+		display(buf, size);
+		refresh();
+		switch (mvgetch(0,0)) {
+		case 'q':
+			running = 0;
+			break;
+		}
+	}
+
 	endwin();
 }
 
