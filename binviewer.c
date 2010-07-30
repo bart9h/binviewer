@@ -6,6 +6,17 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <curses.h>
+
+void binviewer (void* buf, off_t size)
+{
+	initscr();
+	printw("Hello World !!!");
+	refresh();
+	getch();
+	endwin();
+}
+
 int main (int argc, char* argv[])
 {
 	if (argc != 2) {
@@ -26,6 +37,8 @@ int main (int argc, char* argv[])
 	void* buf = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	close(fd);
 	assert(buf != MAP_FAILED);
+
+	binviewer(buf, st.st_size);
 
 	return 0;
 }
