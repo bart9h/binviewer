@@ -8,34 +8,49 @@
 
 #include <curses.h>
 
-void display (void* start, off_t count)
+typedef struct {
+	unsigned char* buf;
+	off_t size;
+	int page_cursor;
+	int cursor;
+	int width, height;
+	int bytes_per_line;
+	int chars_per_byte;
+} binviewer_state_t;
+
+void display (binviewer_state_t* st)
 {
-	int height, width;
-	getmaxyx(stdscr, height, width);
+	getmaxyx(stdscr, st->height, st->width);
 
-	int bytes_per_line = 1;
-	const int chars_per_byte = 3;  // "FF "
-	while (bytes_per_line*2 < (width+1)/(chars_per_byte))
-		bytes_per_line *= 2;
+	st->bytes_per_line = 1;
+	st->chars_per_byte = 3;  // "FF "
+	while (st->bytes_per_line*2 < (st->width+1)/(st->chars_per_byte))
+		st->bytes_per_line *= 2;
 
-	unsigned char* p = (unsigned char*) start;
-	for (int j = 0; j < height; ++j)
-	for (int i = 0; i < bytes_per_line; ++i) {
-		mvprintw(j, i*chars_per_byte, "%02x ", *p);
-		++p;
-		if (--count == 0)
+	unsigned char* p = st->buf + st->page_cursor;
+	for (int j = 0; j < st->height; ++j)
+	for (int i = 0; i < st->bytes_per_line; ++i) {
+		if (st->page_cursor + i+j*st->bytes_per_line >= st->size)
 			return;
+		mvprintw(j, i*st->chars_per_byte, "%02x ", *p);
+		++p;
 	}
 }
 
 void binviewer (void* buf, off_t size)
 {
+	binviewer_state_t state, *st = &state;
+	st->buf = (unsigned char*) buf;
+	st->size = size;
+	st->page_cursor = 0;
+	st->cursor = 0;
+
 	initscr();
 	keypad(stdscr, TRUE);
 
 	int running = 1;
 	while(running) {
-		display(buf, size);
+		display(st);
 		refresh();
 		switch (mvgetch(0,0)) {
 		case 'q':
