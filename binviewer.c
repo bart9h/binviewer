@@ -8,10 +8,30 @@
 
 #include <curses.h>
 
+void display (void* start, off_t count)
+{
+	int height, width;
+	getmaxyx(stdscr, height, width);
+
+	int bytes_per_line = 1;
+	const int chars_per_byte = 3;  // "FF "
+	while (bytes_per_line*2 < (width+1)/(chars_per_byte))
+		bytes_per_line *= 2;
+
+	unsigned char* p = (unsigned char*) start;
+	for (int j = 0; j < height; ++j)
+	for (int i = 0; i < bytes_per_line; ++i) {
+		mvprintw(j, i*chars_per_byte, "%02x ", *p);
+		++p;
+		if (--count == 0)
+			return;
+	}
+}
+
 void binviewer (void* buf, off_t size)
 {
 	initscr();
-	printw("Hello World !!!");
+	display(buf, size);
 	refresh();
 	getch();
 	endwin();
