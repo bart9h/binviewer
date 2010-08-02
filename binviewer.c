@@ -35,6 +35,15 @@ void display (binviewer_state_t* st)
 		mvprintw(j, i*st->chars_per_byte, "%02x ", *p);
 		++p;
 	}
+
+}
+
+void cursor (binviewer_state_t* st)
+{
+	int cx = st->cursor-st->page_cursor;
+	int cy = cx/st->bytes_per_line;
+	cx -= cy*st->bytes_per_line;
+	mvprintw(cy, cx*st->chars_per_byte, "");
 }
 
 void binviewer (void* buf, off_t size)
@@ -51,12 +60,35 @@ void binviewer (void* buf, off_t size)
 	int running = 1;
 	while(running) {
 		display(st);
+		cursor(st);
 		refresh();
-		switch (mvgetch(0,0)) {
+		switch (getch()) {
+		case 'l': case KEY_RIGHT:
+			++st->cursor;
+			break;
+		case 'h': case KEY_LEFT:
+			--st->cursor;
+			break;
+		case 'j': case KEY_DOWN:
+			st->cursor += st->bytes_per_line;
+			break;
+		case 'k': case KEY_UP:
+			st->cursor -= st->bytes_per_line;
+			break;
+		case 'H': case KEY_HOME:
+			st->cursor = 0;
+			break;
+		case 'L': case KEY_END:
+			st->cursor = st->size-1;
+			break;
 		case 'q':
 			running = 0;
 			break;
 		}
+		if (st->cursor >= st->size)
+			st->cursor = st->size-1;
+		if (st->cursor < 0)
+			st->cursor = 0;
 	}
 
 	endwin();
