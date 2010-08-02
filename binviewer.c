@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -9,6 +10,7 @@
 #include <curses.h>
 
 typedef struct {
+	bool running;
 	unsigned char* buf;
 	off_t size;
 	int page_cursor;
@@ -38,12 +40,39 @@ void display (binviewer_state_t* st)
 
 }
 
-void cursor (binviewer_state_t* st)
+void move_cursor (binviewer_state_t* st)
 {
 	int cx = st->cursor-st->page_cursor;
 	int cy = cx/st->bytes_per_line;
 	cx -= cy*st->bytes_per_line;
 	mvprintw(cy, cx*st->chars_per_byte, "");
+}
+
+void handle_keypress (binviewer_state_t* st, int key)
+{
+	switch (key) {
+	case 'l': case KEY_RIGHT:
+		++st->cursor;
+		break;
+	case 'h': case KEY_LEFT:
+		--st->cursor;
+		break;
+	case 'j': case KEY_DOWN:
+		st->cursor += st->bytes_per_line;
+		break;
+	case 'k': case KEY_UP:
+		st->cursor -= st->bytes_per_line;
+		break;
+	case 'H': case KEY_HOME:
+		st->cursor = 0;
+		break;
+	case 'L': case KEY_END:
+		st->cursor = st->size-1;
+		break;
+	case 'q':
+		st->running = false;
+		break;
+	}
 }
 
 void binviewer (void* buf, off_t size)
@@ -53,38 +82,16 @@ void binviewer (void* buf, off_t size)
 	st->size = size;
 	st->page_cursor = 0;
 	st->cursor = 0;
+	st->running = true;
 
 	initscr();
 	keypad(stdscr, TRUE);
 
-	int running = 1;
-	while(running) {
+	while(st->running) {
 		display(st);
-		cursor(st);
+		move_cursor(st);
 		refresh();
-		switch (getch()) {
-		case 'l': case KEY_RIGHT:
-			++st->cursor;
-			break;
-		case 'h': case KEY_LEFT:
-			--st->cursor;
-			break;
-		case 'j': case KEY_DOWN:
-			st->cursor += st->bytes_per_line;
-			break;
-		case 'k': case KEY_UP:
-			st->cursor -= st->bytes_per_line;
-			break;
-		case 'H': case KEY_HOME:
-			st->cursor = 0;
-			break;
-		case 'L': case KEY_END:
-			st->cursor = st->size-1;
-			break;
-		case 'q':
-			running = 0;
-			break;
-		}
+		handle_keypress(st, getch());
 		if (st->cursor >= st->size)
 			st->cursor = st->size-1;
 		if (st->cursor < 0)
