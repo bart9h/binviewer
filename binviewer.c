@@ -18,6 +18,7 @@ typedef struct {
 	int width, height;
 	int bytes_per_line;
 	int chars_per_byte;
+	int header_lines;
 } binviewer_state_t;
 
 void display (binviewer_state_t* st)
@@ -29,12 +30,15 @@ void display (binviewer_state_t* st)
 	while (st->bytes_per_line*2 < (st->width+1)/(st->chars_per_byte))
 		st->bytes_per_line *= 2;
 
+	mvprintw(0, 0, "header");
+	st->header_lines = 1;
+
 	unsigned char* p = st->buf + st->page_cursor;
 	for (int j = 0; j < st->height; ++j)
 	for (int i = 0; i < st->bytes_per_line; ++i) {
 		if (st->page_cursor + i+j*st->bytes_per_line >= st->size)
 			return;
-		mvprintw(j, i*st->chars_per_byte, "%02x ", *p);
+		mvprintw(j+st->header_lines, i*st->chars_per_byte, "%02x ", *p);
 		++p;
 	}
 
@@ -45,7 +49,7 @@ void move_cursor (binviewer_state_t* st)
 	int cx = st->cursor-st->page_cursor;
 	int cy = cx/st->bytes_per_line;
 	cx -= cy*st->bytes_per_line;
-	mvprintw(cy, cx*st->chars_per_byte, "");
+	mvprintw(cy+st->header_lines, cx*st->chars_per_byte, "");
 }
 
 void handle_keypress (binviewer_state_t* st, int key)
@@ -84,7 +88,7 @@ void ajust_cursor (binviewer_state_t* st)
 
 	if (st->page_cursor > st->cursor)
 		st->page_cursor = st->cursor;
-	else while (st->cursor - st->page_cursor > st->bytes_per_line*(st->height-1))
+	else while (st->cursor - st->page_cursor > st->bytes_per_line*(st->height-st->header_lines-1))
 		++st->page_cursor;
 }
 
