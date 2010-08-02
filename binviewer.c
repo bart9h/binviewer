@@ -75,6 +75,19 @@ void handle_keypress (binviewer_state_t* st, int key)
 	}
 }
 
+void ajust_cursor (binviewer_state_t* st)
+{
+	if (st->cursor >= st->size)
+		st->cursor = st->size-1;
+	if (st->cursor < 0)
+		st->cursor = 0;
+
+	if (st->page_cursor > st->cursor)
+		st->page_cursor = st->cursor;
+	else while (st->cursor - st->page_cursor > st->bytes_per_line*(st->height-1))
+		++st->page_cursor;
+}
+
 void binviewer (void* buf, off_t size)
 {
 	binviewer_state_t state, *st = &state;
@@ -92,10 +105,7 @@ void binviewer (void* buf, off_t size)
 		move_cursor(st);
 		refresh();
 		handle_keypress(st, getch());
-		if (st->cursor >= st->size)
-			st->cursor = st->size-1;
-		if (st->cursor < 0)
-			st->cursor = 0;
+		ajust_cursor(st);
 	}
 
 	endwin();
