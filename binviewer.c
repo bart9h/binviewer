@@ -67,6 +67,12 @@ void handle_keypress (binviewer_state_t* st, int key)
 	case 'k': case KEY_UP:
 		st->cursor -= st->bytes_per_line;
 		break;
+	case 'J': case KEY_NPAGE:
+		st->cursor += st->bytes_per_line * (st->height-st->header_lines);
+		break;
+	case 'K': case KEY_PPAGE:
+		st->cursor -= st->bytes_per_line * (st->height-st->header_lines);
+		break;
 	case 'H': case KEY_HOME:
 		st->cursor = 0;
 		break;
