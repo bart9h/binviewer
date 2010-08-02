@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -11,6 +12,7 @@
 
 typedef struct {
 	bool running;
+	bool do_swap;
 	unsigned char* buf;
 	off_t size;
 	int page_cursor;
@@ -21,6 +23,81 @@ typedef struct {
 	int header_lines;
 } binviewer_state_t;
 
+void swap2 (void* ptr)
+{
+	char* p = (char*) ptr;
+	char tmp = p[0];
+	p[0] = p[1];
+	p[1] = tmp;
+}
+
+void swap4 (void* ptr)
+{
+	uint32_t t = *((uint32_t*)ptr);
+	char* a = (char*) ptr;
+	char* b = (char*) &t;
+	a[0] = b[3];
+	a[1] = b[2];
+	a[2] = b[1];
+	a[3] = b[0];
+}
+
+void swap8 (void* ptr)
+{
+	uint64_t t = *((uint64_t*)ptr);
+	char* a = (char*) ptr;
+	char* b = (char*) &t;
+	a[0] = b[7];
+	a[1] = b[6];
+	a[2] = b[5];
+	a[3] = b[4];
+	a[4] = b[3];
+	a[5] = b[2];
+	a[6] = b[1];
+	a[7] = b[0];
+}
+
+void display_data (binviewer_state_t* st)
+{
+	unsigned char* p = st->buf + st->cursor;
+
+	int8_t   i8  = *((int8_t  *) p);
+	uint8_t  u8  = *((uint8_t *) p);
+	int16_t  i16 = *((int16_t *) p);
+	uint16_t u16 = *((uint16_t*) p);
+	int32_t  i32 = *((int32_t *) p);
+	uint32_t u32 = *((uint32_t*) p);
+	int64_t  i64 = *((int64_t *) p);
+	uint64_t u64 = *((uint64_t*) p);
+	float    flt = *((float   *) p);
+	double   dbl = *((double  *) p);
+
+	if (st->do_swap) {
+		swap2(&i16);
+		swap2(&u16);
+		swap4(&i32);
+		swap4(&u32);
+		swap8(&i64);
+		swap8(&u64);
+		swap4(&flt);
+		swap8(&dbl);
+	}
+
+	mvprintw(0, 0,
+			"[0x%08x, %c]  flt=%g, dbl=%lg",
+			st->cursor,
+			st->do_swap ? 'X' : '-',
+			flt, dbl);
+	clrtoeol();
+
+	mvprintw(1, 0,
+			"i8=%hhd, u8=%hhu, i16=%hd, u16=%hu, i32=%d, u32=%u, i64=%ld, u64=%lu",
+			i8, u8, i16, u16, i32, u32, i64, u64);
+	clrtoeol();
+
+	st->header_lines = 2;
+}
+
 void display (binviewer_state_t* st)
 {
 	getmaxyx(stdscr, st->height, st->width);
@@ -30,8 +107,7 @@ void display (binviewer_state_t* st)
 	while (st->bytes_per_line*2 < (st->width+1)/(st->chars_per_byte))
 		st->bytes_per_line *= 2;
 
-	mvprintw(0, 0, "header");
-	st->header_lines = 1;
+	display_data(st);
 
 	unsigned char* p = st->buf + st->page_cursor;
 	for (int j = 0; j < st->height; ++j)
@@ -41,7 +117,6 @@ void display (binviewer_state_t* st)
 		mvprintw(j+st->header_lines, i*st->chars_per_byte, "%02x ", *p);
 		++p;
 	}
-
 }
 
 void move_cursor (binviewer_state_t* st)
@@ -79,6 +154,9 @@ void handle_keypress (binviewer_state_t* st, int key)
 	case 'L': case KEY_END:
 		st->cursor = st->size-1;
 		break;
+	case 's':
+		st->do_swap = !st->do_swap;
+		break;
 	case 'q':
 		st->running = false;
 		break;
@@ -106,6 +184,7 @@ void binviewer (void* buf, off_t size)
 	st->page_cursor = 0;
 	st->cursor = 0;
 	st->running = true;
+	st->do_swap = false;
 
 	initscr();
 	keypad(stdscr, TRUE);
