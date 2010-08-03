@@ -139,6 +139,17 @@ void move_cursor (binviewer_state_t* st)
 	mvprintw(cy+st->header_lines, cx*st->chars_per_byte, "");
 }
 
+void go_to (binviewer_state_t* st)
+{
+	move(0, 0);
+	clrtoeol();
+	printw("goto: ");
+	int x;
+	scanw("%i", &x);
+	if (x > 0)
+		st->cursor = x;
+}
+
 void handle_keypress (binviewer_state_t* st, int key)
 {
 	switch (key) {
@@ -183,6 +194,9 @@ void handle_keypress (binviewer_state_t* st, int key)
 		break;
 	case '*':
 		st->cursor -= 8;
+		break;
+	case 'g':
+		go_to(st);
 		break;
 	case 's':
 		st->do_swap = !st->do_swap;
