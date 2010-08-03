@@ -21,6 +21,7 @@ typedef struct {
 	int bytes_per_line;
 	int chars_per_byte;
 	int header_lines;
+	int attr;
 } binviewer_state_t;
 
 void swap2 (void* ptr)
@@ -87,22 +88,22 @@ void display_data (binviewer_state_t* st)
 	printw("[0x%08x, %c]   flt=",
 			st->cursor,
 			st->do_swap ? 'X' : '-');
-	attron(A_BOLD); printw("%' -17g", flt); attroff(A_BOLD);
-	printw("   dbl="); attron(A_BOLD); printw("%lg", dbl); attroff(A_BOLD);
+	attron(st->attr); printw("%' -17g", flt); attroff(st->attr);
+	printw("   dbl="); attron(st->attr); printw("%lg", dbl); attroff(st->attr);
 	clrtoeol();
 
 	move(1, 0);
-	printw(   "i8="); attron(A_BOLD); printw("%' -4.1hhd", i8); attroff(A_BOLD);
-	printw( "  u8="); attron(A_BOLD); printw("%' -4.1hhu", u8); attroff(A_BOLD);
-	printw("  i16="); attron(A_BOLD); printw("%' -6.1hd", i16); attroff(A_BOLD);
-	printw("  u16="); attron(A_BOLD); printw("%' -6.1hu", u16); attroff(A_BOLD);
-	printw("  i32="); attron(A_BOLD); printw("%' -11.1d",  i32); attroff(A_BOLD);
-	printw("  u32="); attron(A_BOLD); printw("%' -11.1u",  u32); attroff(A_BOLD);
+	printw(   "i8="); attron(st->attr); printw("%' -4.1hhd", i8); attroff(st->attr);
+	printw( "  u8="); attron(st->attr); printw("%' -4.1hhu", u8); attroff(st->attr);
+	printw("  i16="); attron(st->attr); printw("%' -6.1hd", i16); attroff(st->attr);
+	printw("  u16="); attron(st->attr); printw("%' -6.1hu", u16); attroff(st->attr);
+	printw("  i32="); attron(st->attr); printw("%' -11.1d",  i32); attroff(st->attr);
+	printw("  u32="); attron(st->attr); printw("%' -11.1u",  u32); attroff(st->attr);
 	clrtoeol();
 
 	move(2, 0);
-	printw("i64="); attron(A_BOLD); printw("%' -26.1ld", i64); attroff(A_BOLD);
-	printw("u64="); attron(A_BOLD); printw("%' -26.1lu", u64); attroff(A_BOLD);
+	printw("i64="); attron(st->attr); printw("%' -26.1ld", i64); attroff(st->attr);
+	printw("u64="); attron(st->attr); printw("%' -26.1lu", u64); attroff(st->attr);
 	clrtoeol();
 
 	st->header_lines = 4;
@@ -199,6 +200,13 @@ void binviewer (void* buf, off_t size)
 
 	initscr();
 	keypad(stdscr, TRUE);
+
+	st->attr = A_BOLD;
+	if (has_colors()) {
+		start_color();
+		init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+		st->attr |= COLOR_PAIR(1);
+	}
 
 	while(st->running) {
 		display(st);
