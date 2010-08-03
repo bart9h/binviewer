@@ -166,6 +166,24 @@ void handle_keypress (binviewer_state_t* st, int key)
 	case 'L': case KEY_END:
 		st->cursor = st->size-1;
 		break;
+	case '2':
+		st->cursor += 2;
+		break;
+	case '@':
+		st->cursor -= 2;
+		break;
+	case '4':
+		st->cursor += 4;
+		break;
+	case '$':
+		st->cursor -= 4;
+		break;
+	case '8':
+		st->cursor += 8;
+		break;
+	case '*':
+		st->cursor -= 8;
+		break;
 	case 's':
 		st->do_swap = !st->do_swap;
 		break;
