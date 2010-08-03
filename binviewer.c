@@ -83,23 +83,34 @@ void display_data (binviewer_state_t* st)
 		swap8(&dbl);
 	}
 
-	mvprintw(0, 0,
-			"[0x%08x, %c]  flt=%g, dbl=%lg",
+	move(0, 0);
+	printw("[0x%08x, %c]   flt=",
 			st->cursor,
-			st->do_swap ? 'X' : '-',
-			flt, dbl);
+			st->do_swap ? 'X' : '-');
+	attron(A_BOLD); printw("%' -17g", flt); attroff(A_BOLD);
+	printw("   dbl="); attron(A_BOLD); printw("%lg", dbl); attroff(A_BOLD);
 	clrtoeol();
 
-	mvprintw(1, 0,
-			"i8=%hhd, u8=%hhu, i16=%hd, u16=%hu, i32=%d, u32=%u, i64=%ld, u64=%lu",
-			i8, u8, i16, u16, i32, u32, i64, u64);
+	move(1, 0);
+	printw(   "i8="); attron(A_BOLD); printw("%' -4.1hhd", i8); attroff(A_BOLD);
+	printw( "  u8="); attron(A_BOLD); printw("%' -4.1hhu", u8); attroff(A_BOLD);
+	printw("  i16="); attron(A_BOLD); printw("%' -6.1hd", i16); attroff(A_BOLD);
+	printw("  u16="); attron(A_BOLD); printw("%' -6.1hu", u16); attroff(A_BOLD);
+	printw("  i32="); attron(A_BOLD); printw("%' -11.1d",  i32); attroff(A_BOLD);
+	printw("  u32="); attron(A_BOLD); printw("%' -11.1u",  u32); attroff(A_BOLD);
 	clrtoeol();
 
-	st->header_lines = 2;
+	move(2, 0);
+	printw("i64="); attron(A_BOLD); printw("%' -26.1ld", i64); attroff(A_BOLD);
+	printw("u64="); attron(A_BOLD); printw("%' -26.1lu", u64); attroff(A_BOLD);
+	clrtoeol();
+
+	st->header_lines = 4;
 }
 
 void display (binviewer_state_t* st)
 {
+	erase();
 	getmaxyx(stdscr, st->height, st->width);
 
 	st->bytes_per_line = 1;
